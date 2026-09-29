@@ -1,0 +1,8 @@
+{
+  "name": "منصة فيكسا للاستثمار | VEXA Investment Platform",
+  "description": "منصة فيكسا للاستثمار والخدمات المالية المتقدمة - VEXA Investment Platform",
+  "permissions": [],
+  "capabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

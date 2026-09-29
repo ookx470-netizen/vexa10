@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>لوحة تحكم إدارة منصة فيكسا | VEXA Admin Control Center</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Cairo', sans-serif; background-color: #07090e; color: #f1f5f9; }
+    .gold-gradient { background: linear-gradient(135deg, #f59e0b 0%, #d97706 50%, #b45309 100%); }
+    .gold-text { background: linear-gradient(135deg, #fbbf24, #f59e0b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .glass-card { background: rgba(15, 23, 42, 0.75); border: 1px solid rgba(245, 158, 11, 0.15); backdrop-filter: blur(16px); }
+    .glass-card:hover { border-color: rgba(245, 158, 11, 0.3); }
+    .glass-input { background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); color: #fff; }
+    .glass-input:focus { border-color: #f59e0b; outline: none; }
+  </style>
+</head>
+<body class="min-h-screen selection:bg-amber-500/30 selection:text-amber-200">
+
+  <!-- Admin Login Overlay -->
+  <div id="login-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
+    <div class="glass-card max-w-md w-full p-8 rounded-3xl border border-amber-500/30 shadow-2xl text-center space-y-6">
+      <div class="w-16 h-16 mx-auto rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-3xl shadow-lg shadow-amber-500/20">
+        🛡️
+      </div>
+      <div>
+        <h1 class="text-2xl font-extrabold gold-text">لوحة إدارة منصة فيكسا</h1>
+        <p class="text-xs text-slate-400 mt-1">VEXA Investment Administrative Portal</p>
+      </div>
+      <div class="space-y-4">
+        <div class="text-right">
+          <label class="block text-xs font-semibold text-slate-300 mb-1.5">رمز مرور الإدارة</label>
+          <input type="password" id="admin-pass-input" placeholder="أدخل رمز المرور الإداري (hemoome19952000)" 
+                 class="w-full px-4 py-3 rounded-xl glass-input text-sm text-center tracking-wider">
+        </div>
+        <p id="login-err" class="text-xs text-rose-400 hidden"></p>
+        <button onclick="loginAdmin()" class="w-full py-3.5 px-4 rounded-xl gold-gradient text-slate-950 font-bold text-sm hover:brightness-110 shadow-lg shadow-amber-500/20 transition active:scale-95">
+          دخول إلى لوحة التحكم
+        </button>
+        <a href="/" class="block text-xs text-amber-400/80 hover:text-amber-300 underline">العودة إلى تطبيق المستثمر</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Admin Interface -->
+  <div id="admin-app" class="hidden min-h-screen flex flex-col">
+    <!-- Top Navbar -->
+    <header class="border-b border-amber-500/15 bg-slate-950/80 backdrop-blur-xl sticky top-0 z-40 px-4 lg:px-8 py-3.5 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center font-black text-amber-400 text-lg shadow-lg shadow-amber-500/10">
+          VX
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="font-extrabold text-base lg:text-lg text-slate-100">لوحة الإدارة والتحكم</h1>
+            <span class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400">نظام مباشر</span>
+          </div>
+          <p class="text-[11px] text-slate-400">VEXA Sovereign Financial Management - حساب الإدارة: 07519952000</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <a href="/" class="px-3.5 py-1.5 rounded-lg border border-amber-500/30 text-xs font-semibold text-amber-300 hover:bg-amber-500/10 flex items-center gap-1.5 transition">
+          <span>تطبيق المستثمر</span>
+          <span>↗</span>
+        </a>
+        <button onclick="refreshData()" class="px-3 py-1.5 rounded-lg bg-slate-800 text-xs text-slate-300 hover:bg-slate-700 transition flex items-center gap-1">
+          <span>🔄</span>
+          <span>تحديث</span>
+        </button>
+        <button onclick="adminLogout()" class="px-3 py-1.5 rounded-lg bg-rose-500/15 border border-rose-500/30 text-xs font-bold text-rose-300 hover:bg-rose-500/25 transition flex items-center gap-1">
+          <span>🚪</span>
+          <span>تسجيل خروج</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <div class="border-b border-white/5 bg-slate-900/50 px-4 lg:px-8 flex overflow-x-auto gap-2 py-2 text-xs font-bold scrollbar-none">
+      <button onclick="setTab('overview')" id="tab-overview" class="tab-btn px-4 py-2 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/30">
+        📊 الإحصائيات العامة
+      </button>
+      <button onclick="setTab('users')" id="tab-users" class="tab-btn px-4 py-2 rounded-xl text-slate-400 hover:text-slate-200">
+        👥 إدارة المستثمرين (<span id="count-users">0</span>)
+      </button>
+      <button onclick="setTab('txs')" id="tab-txs" class="tab-btn px-4 py-2 rounded-xl text-slate-400 hover:text-slate-200">
+        💳 العمليات المالية
+      </button>
+      <button onclick="setTab('contracts')" id="tab-contracts" class="tab-btn px-4 py-2 rounded-xl text-slate-400 hover:text-slate-200">
+        📜 باقات العقود
+      </button>
+      <button onclick="setTab('wallet')" id="tab-wallet" class="tab-btn px-4 py-2 rounded-xl text-slate-400 hover:text-slate-200">
+        ⚙️ إعدادات الإيداع والمحفظة
+      </button>
+      <button onclick="setTab('broadcast')" id="tab-broadcast" class="tab-btn px-4 py-2 rounded-xl text-slate-400 hover:text-slate-200">
+        📢 بث إشعار عام
+      </button>
+    </div>
+
+    <!-- Content Sections -->
+    <main class="flex-1 p-4 lg:p-8 max-w-7xl mx-auto w-full space-y-6">
+
+      <!-- SECTION: OVERVIEW -->
+      <section id="sec-overview" class="space-y-6">
+        <!-- Stats Grid -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="glass-card p-5 rounded-2xl space-y-2">
+            <span class="text-xs font-semibold text-slate-400">إجمالي المستثمرين</span>
+            <p id="stat-users" class="text-2xl lg:text-3xl font-black text-slate-100">0</p>
+            <span class="text-[10px] text-emerald-400">● حسابات مسجلة ومفعلة</span>
+          </div>
+          <div class="glass-card p-5 rounded-2xl space-y-2">
+            <span class="text-xs font-semibold text-slate-400">إجمالي الأرصدة المتاحة</span>
+            <p id="stat-balances" class="text-2xl lg:text-3xl font-black gold-text">$0.00</p>
+            <span class="text-[10px] text-amber-400">سيولة محافظ المستثمرين</span>
+          </div>
+          <div class="glass-card p-5 rounded-2xl space-y-2">
+            <span class="text-xs font-semibold text-slate-400">إجمالي الإيداعات</span>
+            <p id="stat-deposits" class="text-2xl lg:text-3xl font-black text-emerald-400">$0.00</p>
+            <span class="text-[10px] text-slate-400">USDT (TRC20)</span>
+          </div>
+          <div class="glass-card p-5 rounded-2xl space-y-2">
+            <span class="text-xs font-semibold text-slate-400">العقود النشطة الحالية</span>
+            <p id="stat-contracts" class="text-2xl lg:text-3xl font-black text-cyan-400">0</p>
+            <span class="text-[10px] text-cyan-400">توزيع أرباح يومي نشط</span>
+          </div>
+        </div>
+
+        <!-- Quick Actions Banner -->
+        <div class="glass-card p-6 rounded-3xl border border-amber-500/20 flex flex-col md:flex-row items-center justify-between gap-4 bg-gradient-to-r from-amber-500/10 via-slate-900 to-transparent">
+          <div class="space-y-1 text-center md:text-right">
+            <h3 class="font-bold text-slate-100 text-lg">التحكم الفوري بحسابات المستثمرين والمحافظ</h3>
+            <p class="text-xs text-slate-400">يمكنك شحن الرصيد لأي مستخدم، تفعيل باقات، تعديل نقاط الشرف، وتغيير عنوان محفظة الإيداع فورياً.</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="setTab('users')" class="px-4 py-2 rounded-xl gold-gradient text-slate-950 font-bold text-xs hover:brightness-110 transition shadow-lg shadow-amber-500/10">
+              إدارة أرصدة المستخدمين 👤
+            </button>
+            <button onclick="setTab('wallet')" class="px-4 py-2 rounded-xl bg-slate-800 text-amber-300 font-bold text-xs hover:bg-slate-700 transition">
+              تغيير محفظة الإيداع 💼
+            </button>
+          </div>
+        </div>
+
+        <!-- Recent Users Preview -->
+        <div class="glass-card p-6 rounded-3xl space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="font-bold text-slate-100 text-sm">أحدث المستثمرين المسجلين</h3>
+            <button onclick="setTab('users')" class="text-xs text-amber-400 hover:underline">عرض جميع المستخدمين</button>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-right text-xs">
+              <thead class="text-slate-400 border-b border-white/5">
+                <tr>
+                  <th class="py-3 px-3">الاسم</th>
+                  <th class="py-3 px-3">رقم الهاتف</th>
+                  <th class="py-3 px-3">الرصيد المتاح</th>
+                  <th class="py-3 px-3">العقد النشط</th>
+                  <th class="py-3 px-3">نقاط الشرف</th>
+                  <th class="py-3 px-3 text-center">إجراء سريع</th>
+                </tr>
+              </thead>
+              <tbody id="overview-users-tbody" class="divide-y divide-white/5 text-slate-200">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION: USERS MANAGEMENT -->
+      <section id="sec-users" class="hidden space-y-6">
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div>
+            <h2 class="text-lg font-bold text-slate-100">إدارة المستثمرين والأرصدة</h2>
+            <p class="text-xs text-slate-400">التحكم الكامل بأرصدة المحافظ، نقاط الشرف، ومنح فرص الحظ</p>
+          </div>
+          <div class="w-full sm:w-72">
+            <input type="text" id="user-search" oninput="filterUsers()" placeholder="ابحث باسم المستثمر أو رقم هاتفه..." 
+                   class="w-full px-4 py-2.5 rounded-xl glass-input text-xs">
+          </div>
+        </div>
+
+        <div class="glass-card p-6 rounded-3xl overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-right text-xs">
+              <thead class="text-slate-400 border-b border-white/5">
+                <tr>
+                  <th class="py-3 px-3">المستثمر</th>
+                  <th class="py-3 px-3">الهاتف</th>
+                  <th class="py-3 px-3">الرصيد المتاح</th>
+                  <th class="py-3 px-3">العقد الحالي</th>
+                  <th class="py-3 px-3">نقاط الشرف</th>
+                  <th class="py-3 px-3">فرص الحظ</th>
+                  <th class="py-3 px-3 text-center">الإجراءات والتحكم</th>
+                </tr>
+              </thead>
+              <tbody id="users-tbody" class="divide-y divide-white/5 text-slate-200">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION: TRANSACTIONS -->
+      <section id="sec-txs" class="hidden space-y-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="text-lg font-bold text-slate-100">سجل العمليات المالية (إيداع وسحب)</h2>
+            <p class="text-xs text-slate-400">متابعة واعتماد طلبات السحب والإيداع في المنصة</p>
+          </div>
+          <button onclick="refreshData()" class="text-xs text-amber-400 hover:underline">تحديث السجل 🔄</button>
+        </div>
+
+        <div class="glass-card p-6 rounded-3xl overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-right text-xs">
+              <thead class="text-slate-400 border-b border-white/5">
+                <tr>
+                  <th class="py-3 px-3">المعرف</th>
+                  <th class="py-3 px-3">المستثمر</th>
+                  <th class="py-3 px-3">النوع</th>
+                  <th class="py-3 px-3">المبلغ</th>
+                  <th class="py-3 px-3">الحالة</th>
+                  <th class="py-3 px-3">التفاصيل</th>
+                  <th class="py-3 px-3 text-center">الإجراء</th>
+                </tr>
+              </thead>
+              <tbody id="txs-tbody" class="divide-y divide-white/5 text-slate-200">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION: CONTRACTS -->
+      <section id="sec-contracts" class="hidden space-y-6">
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div>
+            <h2 class="text-lg font-bold text-slate-100">إدارة العقود والباقات الاستثمارية</h2>
+            <p class="text-xs text-slate-400">التحكم الكامل في رصيد التفعيل المطلوب ($)، عدد الأيام (المدة)، والربح اليومي</p>
+          </div>
+          <button onclick="openContractModal()" class="px-4 py-2.5 rounded-xl gold-gradient text-slate-950 font-bold text-xs hover:brightness-110 shadow-lg shadow-amber-500/20 transition active:scale-95 flex items-center gap-1.5">
+            <span>➕</span>
+            <span>إضافة باقة استثمارية جديدة</span>
+          </button>
+        </div>
+
+        <div id="contracts-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <!-- Dynamically populated contracts -->
+        </div>
+      </section>
+
+      <!-- SECTION: WALLET SETTINGS -->
+      <section id="sec-wallet" class="hidden space-y-6">
+        <div>
+          <h2 class="text-lg font-bold text-slate-100">إعدادات محفظة الإيداع وأمان المنصة</h2>
+          <p class="text-xs text-slate-400">تعديل عنوان محفظة USDT التي يستقبل عليها المدير الإيداعات</p>
+        </div>
+
+        <div class="max-w-2xl glass-card p-8 rounded-3xl space-y-6">
+          <div class="space-y-2">
+            <label class="block text-xs font-bold text-slate-300">عنوان محفظة الإيداع (Polygon EVM Address)</label>
+            <input type="text" id="cfg-deposit-addr" class="w-full px-4 py-3 rounded-xl glass-input text-xs font-mono text-amber-300">
+            <p class="text-[11px] text-slate-400">سيظهر هذا العنوان فورياً لجميع المستثمرين في نافذة الإيداع ورمز الاستجابة السريعة (QR Code).</p>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="space-y-2">
+              <label class="block text-xs font-bold text-slate-300">الشبكة المعتمدة</label>
+              <input type="text" id="cfg-deposit-net" class="w-full px-4 py-3 rounded-xl glass-input text-xs" value="Polygon (USDT)">
+            </div>
+            <div class="space-y-2">
+              <label class="block text-xs font-bold text-slate-300">الحد الأدنى للإيداع ($)</label>
+              <input type="number" id="cfg-min-dep" class="w-full px-4 py-3 rounded-xl glass-input text-xs" value="3">
+            </div>
+          </div>
+
+          <div class="space-y-2 pt-2 border-t border-white/5">
+            <label class="block text-xs font-bold text-slate-300">تغيير رمز مرور لوحة الإدارة</label>
+            <input type="password" id="cfg-admin-pass" class="w-full px-4 py-3 rounded-xl glass-input text-xs" placeholder="اتركه فارغاً إذا كنت لا ترغب بتغييره">
+          </div>
+
+          <button onclick="saveWalletConfig()" class="w-full py-3.5 px-4 rounded-xl gold-gradient text-slate-950 font-bold text-sm hover:brightness-110 shadow-lg shadow-amber-500/20 transition active:scale-95">
+            حفظ إعدادات المحفظة
+          </button>
+        </div>
+      </section>
+
+      <!-- SECTION: BROADCAST NOTIFICATION -->
+      <section id="sec-broadcast" class="hidden space-y-6">
+        <div>
+          <h2 class="text-lg font-bold text-slate-100">بث إشعار عام لجميع المستثمرين</h2>
+          <p class="text-xs text-slate-400">إرسال إشعار فوري يظهر في شاشات جميع المستخدمين المسجلين في المنصة</p>
+        </div>
+
+        <div class="max-w-2xl glass-card p-8 rounded-3xl space-y-5">
+          <div class="space-y-2">
+            <label class="block text-xs font-bold text-slate-300">عنوان الإشعار</label>
+            <input type="text" id="bcast-title" placeholder="مثال: ترقية استثمارية جديدة أو مكافأة إيداع" class="w-full px-4 py-3 rounded-xl glass-input text-xs">
+          </div>
+          <div class="space-y-2">
+            <label class="block text-xs font-bold text-slate-300">نص الرسالة</label>
+            <textarea id="bcast-msg" rows="4" placeholder="اكتب نص الرسالة هنا..." class="w-full px-4 py-3 rounded-xl glass-input text-xs"></textarea>
+          </div>
+          <div class="space-y-2">
+            <label class="block text-xs font-bold text-slate-300">التصنيف</label>
+            <select id="bcast-cat" class="w-full px-4 py-3 rounded-xl glass-input text-xs">
+              <option value="system">تنبيه نظامي عام</option>
+              <option value="financial">مالي وعروض إيداع</option>
+              <option value="contracts">عقود واستثمار</option>
+            </select>
+          </div>
+          <button onclick="sendBroadcast()" class="w-full py-3.5 px-4 rounded-xl gold-gradient text-slate-950 font-bold text-sm hover:brightness-110 shadow-lg shadow-amber-500/20 transition active:scale-95">
+            إرسال وبث الإشعار الآن 📢
+          </button>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Modal: Modify Balance -->
+  <div id="modal-balance" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+    <div class="glass-card max-w-md w-full p-6 rounded-3xl border border-amber-500/30 space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="font-bold text-slate-100 text-sm">تعديل رصيد المستثمر</h3>
+        <button onclick="closeModal('modal-balance')" class="text-slate-400 hover:text-white">✕</button>
+      </div>
+      <p id="balance-user-label" class="text-xs text-amber-300"></p>
+      <input type="hidden" id="balance-user-id">
+
+      <div class="space-y-2">
+        <label class="block text-xs text-slate-300">الإجراء</label>
+        <select id="balance-action" class="w-full px-3 py-2.5 rounded-xl glass-input text-xs">
+          <option value="add">➕ إضافة رصيد (شحن)</option>
+          <option value="deduct">➖ خصم رصيد</option>
+          <option value="set">✏️ تعيين رصيد محدد</option>
+        </select>
+      </div>
+
+      <div class="space-y-2">
+        <label class="block text-xs text-slate-300">المبلغ بالدولار ($)</label>
+        <input type="number" id="balance-amount" placeholder="مثال: 50" class="w-full px-3 py-2.5 rounded-xl glass-input text-xs">
+      </div>
+
+      <div class="space-y-2">
+        <label class="block text-xs text-slate-300">ملاحظة أو سبب (اختياري يظهر للمستخدم)</label>
+        <input type="text" id="balance-reason" placeholder="مثال: مكافأة ترحيبية أو إيداع يدوي" class="w-full px-3 py-2.5 rounded-xl glass-input text-xs">
+      </div>
+
+      <button onclick="submitBalanceChange()" class="w-full py-3 rounded-xl gold-gradient text-slate-950 font-bold text-xs hover:brightness-110 transition">
+        تأكيد التعديل
+      </button>
+    </div>
+  </div>
+
+  <!-- Modal: Modify Honor Score & Chances -->
+  <div id="modal-honor" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+    <div class="glass-card max-w-md w-full p-6 rounded-3xl border border-amber-500/30 space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="font-bold text-slate-100 text-sm">تعديل نقاط الشرف وفرص الحظ</h3>
+        <button onclick="closeModal('modal-honor')" class="text-slate-400 hover:text-white">✕</button>
+      </div>
+      <p id="honor-user-label" class="text-xs text-amber-300"></p>
+      <input type="hidden" id="honor-user-id">
+
+      <div class="space-y-2">
+        <label class="block text-xs text-slate-300">نقاط الشرف (0 - 100)</label>
+        <input type="number" id="honor-score-val" min="0" max="100" class="w-full px-3 py-2.5 rounded-xl glass-input text-xs">
+        <p class="text-[10px] text-slate-400">تؤثر نقاط الشرف مباشرة على نسبة استحقاق أرباح عداد الدورة اليومية.</p>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3 pt-2">
+        <div class="space-y-2">
+          <label class="block text-xs text-slate-300">منح فرص صناديق</label>
+          <input type="number" id="honor-box-chances" value="0" min="0" class="w-full px-3 py-2.5 rounded-xl glass-input text-xs">
+        </div>
+        <div class="space-y-2">
+          <label class="block text-xs text-slate-300">منح دورات عجلة الحظ</label>
+          <input type="number" id="honor-wheel-spins" value="0" min="0" class="w-full px-3 py-2.5 rounded-xl glass-input text-xs">
+        </div>
+      </div>
+
+      <button onclick="submitHonorAndChances()" class="w-full py-3 rounded-xl gold-gradient text-slate-950 font-bold text-xs hover:brightness-110 transition">
+        تحديث البيانات
+      </button>
+    </div>
+  </div>
+
+  <!-- Modal: Edit / Add Contract -->
+  <div id="modal-contract" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+    <div class="glass-card max-w-lg w-full p-6 rounded-3xl border border-amber-500/30 space-y-4 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between">
+        <h3 id="contract-modal-title" class="font-bold text-slate-100 text-sm">تعديل باقة العقد الاستثماري</h3>
+        <button onclick="closeModal('modal-contract')" class="text-slate-400 hover:text-white">✕</button>
+      </div>
+      <input type="hidden" id="contract-form-id">
+
+      <div class="space-y-1.5">
+        <label class="block text-xs font-bold text-slate-300">اسم العقد (بالعربية)</label>
+        <input type="text" id="contract-form-title" placeholder="مثال: صندوق السيولة المتقدمة V-Crypto" class="w-full px-3.5 py-2.5 rounded-xl glass-input text-xs">
+      </div>
+
+      <div class="grid grid-cols-2 gap-3">
+        <div class="space-y-1.5">
+          <label class="block text-xs font-bold text-amber-300">رصيد الاستثمار المطلوب ($)</label>
+          <input type="number" id="contract-form-amount" placeholder="مثال: 50" min="0" step="1" class="w-full px-3.5 py-2.5 rounded-xl glass-input text-xs font-bold text-amber-300">
+          <p class="text-[10px] text-slate-400">الرصيد المقتطع من المحفظة للتفعيل (0 = مجاني).</p>
+        </div>
+        <div class="space-y-1.5">
+          <label class="block text-xs font-bold text-cyan-300">عدد الأيام (مدة العقد)</label>
+          <input type="number" id="contract-form-days" placeholder="مثال: 60" min="1" step="1" class="w-full px-3.5 py-2.5 rounded-xl glass-input text-xs font-bold text-cyan-300">
+          <p class="text-[10px] text-slate-400">فترة صلاحية العقد بالأيام.</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3">
+        <div class="space-y-1.5">
+          <label class="block text-xs font-bold text-emerald-300">الربح اليومي ($)</label>
+          <input type="number" id="contract-form-profit" placeholder="مثال: 3.25" min="0" step="0.01" class="w-full px-3.5 py-2.5 rounded-xl glass-input text-xs font-bold text-emerald-300">
+        </div>
+        <div class="space-y-1.5">
+          <label class="block text-xs font-bold text-slate-300">شارة العقد (Badge)</label>
+          <input type="text" id="contract-form-badge" placeholder="مثال: عقد فضي معتمد" class="w-full px-3.5 py-2.5 rounded-xl glass-input text-xs">
+        </div>
+      </div>
+
+      <div class="space-y-1.5">
+        <label class="block text-xs font-bold text-slate-300">وصف العقد ومميزاته</label>
+        <textarea id="contract-form-desc" rows="3" placeholder="وصف موجز يظهر للمستثمرين حول آلية هذا العقد..." class="w-full px-3.5 py-2.5 rounded-xl glass-input text-xs"></textarea>
+      </div>
+
+      <button onclick="submitContractChange()" class="w-full py-3.5 rounded-xl gold-gradient text-slate-950 font-bold text-xs hover:brightness-110 shadow-lg shadow-amber-500/20 transition active:scale-95">
+        حفظ وتطبيق التغييرات فورياً 💾
+      </button>
+    </div>
+  </div>
+
+  <script>
+    let appData = { stats: {}, users: [], contracts: [], transactions: [], settings: {} };
+
+    async function loginAdmin() {
+      const pass = document.getElementById('admin-pass-input').value;
+      const err = document.getElementById('login-err');
+      try {
+        const res = await fetch('/api/admin/auth', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: pass })
+        });
+        const data = await res.json();
+        if (data.success) {
+          sessionStorage.setItem('vexa_admin_logged', 'true');
+          document.getElementById('login-modal').classList.add('hidden');
+          document.getElementById('admin-app').classList.remove('hidden');
+          refreshData();
+        } else {
+          err.innerText = data.message || 'رمز الدخول غير صحيح';
+          err.classList.remove('hidden');
+        }
+      } catch (e) {
+        err.innerText = 'حدث خطأ في الاتصال بالخادم';
+        err.classList.remove('hidden');
+      }
+    }
+
+    if (sessionStorage.getItem('vexa_admin_logged') === 'true') {
+      document.getElementById('login-modal').classList.add('hidden');
+      document.getElementById('admin-app').classList.remove('hidden');
+      refreshData();
+    }
+
+    function setTab(tab) {
+      ['overview', 'users', 'txs', 'contracts', 'wallet', 'broadcast'].forEach(t => {
+        document.getElementById(`sec-${t}`).classList.add('hidden');
+        const btn = document.getElementById(`tab-${t}`);
+        btn.classList.remove('bg-amber-500/20', 'text-amber-300', 'border', 'border-amber-500/30');
+        btn.classList.add('text-slate-400');
+      });
+      document.getElementById(`sec-${tab}`).classList.remove('hidden');
+      const activeBtn = document.getElementById(`tab-${tab}`);
+      activeBtn.classList.remove('text-slate-400');
+      activeBtn.classList.add('bg-amber-500/20', 'text-amber-300', 'border', 'border-amber-500/30');
+    }
+
+    async function refreshData() {
+      try {
+        const res = await fetch('/api/admin/overview');
+        const data = await res.json();
+        if (data.success) {
+          appData = data;
+          renderOverview();
+          renderUsers();
+          renderTxs();
+          renderContracts();
+          renderWalletSettings();
+        }
+      } catch (err) {
+        console.error('Failed to load admin data:', err);
+      }
+    }
+
+    function renderOverview() {
+      document.getElementById('stat-users').innerText = appData.stats.totalUsers || 0;
+      document.getElementById('count-users').innerText = appData.stats.totalUsers || 0;
+      document.getElementById('stat-balances').innerText = '$' + (appData.stats.totalBalances || 0).toLocaleString(undefined, {minimumFractionDigits: 2});
+      document.getElementById('stat-deposits').innerText = '$' + (appData.stats.totalDeposits || 0).toLocaleString(undefined, {minimumFractionDigits: 2});
+      document.getElementById('stat-contracts').innerText = appData.stats.activeContractsCount || 0;
+
+      const tbody = document.getElementById('overview-users-tbody');
+      tbody.innerHTML = '';
+      (appData.users || []).slice(0, 5).forEach(u => {
+        tbody.innerHTML += `
+          <tr class="hover:bg-white/5 transition">
+            <td class="py-3 px-3 font-bold text-slate-100">${u.fullName}</td>
+            <td class="py-3 px-3 font-mono text-slate-400">${u.phoneNumber}</td>
+            <td class="py-3 px-3 font-bold text-amber-300">$${(u.availableBalance || 0).toFixed(2)}</td>
+            <td class="py-3 px-3 text-cyan-400">${u.activeContractName}</td>
+            <td class="py-3 px-3"><span class="px-2 py-0.5 rounded-full ${u.honorScore === 100 ? 'bg-emerald-500/15 text-emerald-400' : 'bg-amber-500/15 text-amber-400'} font-bold">${u.honorScore}/100</span></td>
+            <td class="py-3 px-3 text-center">
+              <button onclick="openBalanceModal('${u.id}', '${u.fullName}', ${u.availableBalance})" class="px-2.5 py-1 rounded-lg bg-amber-500/15 text-amber-300 hover:bg-amber-500/30 font-bold transition">تعديل الرصيد 💰</button>
+            </td>
+          </tr>
+        `;
+      });
+    }
+
+    function renderUsers() {
+      const tbody = document.getElementById('users-tbody');
+      tbody.innerHTML = '';
+      (appData.users || []).forEach(u => {
+        const isActivated = (u.honorScore || 0) >= 100;
+        tbody.innerHTML += `
+          <tr class="hover:bg-white/5 transition">
+            <td class="py-3.5 px-3">
+              <div class="font-bold text-slate-100">${u.fullName}</div>
+              <div class="text-[10px] text-slate-400">${u.membershipLevel}</div>
+            </td>
+            <td class="py-3.5 px-3 font-mono text-slate-400">${u.phoneNumber}</td>
+            <td class="py-3.5 px-3 font-bold text-amber-300 text-sm">$${(u.availableBalance || 0).toFixed(2)}</td>
+            <td class="py-3.5 px-3 text-cyan-300 font-semibold">${u.activeContractName}</td>
+            <td class="py-3.5 px-3">
+              <span class="px-2 py-0.5 rounded-full ${isActivated ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30' : (u.honorScore || 0) > 0 ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30' : 'bg-rose-500/15 text-rose-400 border border-rose-500/30'} font-bold">
+                ${isActivated ? 'مفعل (100/100)' : (u.honorScore || 0) > 0 ? `${u.honorScore}/100` : '0/100 (غير مفعل)'}
+              </span>
+            </td>
+            <td class="py-3.5 px-3 text-slate-300 font-mono">
+              📦 ${u.mysteryChances} | 🎡 ${u.luckySpins}
+            </td>
+            <td class="py-3.5 px-3 text-center space-x-1 space-x-reverse">
+              <button onclick="openBalanceModal('${u.id}', '${u.fullName}', ${u.availableBalance})" class="px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 font-bold transition">شحن / خصم 💰</button>
+              <button onclick="openHonorModal('${u.id}', '${u.fullName}', ${u.honorScore})" class="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-200 hover:bg-slate-700 font-bold transition">نقاط الشرف ⭐</button>
+              <button onclick="toggleUserActivation('${u.id}', ${u.honorScore || 0})" class="px-2 py-1 rounded-lg ${isActivated ? 'bg-rose-500/20 text-rose-300 hover:bg-rose-500/30' : 'bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30'} font-bold text-[10px] transition">
+                ${isActivated ? 'إلغاء التفعيل ⛔' : 'تفعيل الحساب ✅'}
+              </button>
+            </td>
+          </tr>
+        `;
+      });
+    }
+
+    function filterUsers() {
+      const q = document.getElementById('user-search').value.toLowerCase();
+      const rows = document.getElementById('users-tbody').getElementsByTagName('tr');
+      for (let r of rows) {
+        r.style.display = r.innerText.toLowerCase().includes(q) ? '' : 'none';
+      }
+    }
+
+    function renderTxs() {
+      const tbody = document.getElementById('txs-tbody');
+      tbody.innerHTML = '';
+      if (!appData.transactions || appData.transactions.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="py-6 text-center text-slate-500">لا توجد عمليات مسجلة حالياً</td></tr>';
+        return;
+      }
+      appData.transactions.forEach(tx => {
+        const isDep = tx.type === 'deposit';
+        const isWith = tx.type === 'withdrawal';
+        tbody.innerHTML += `
+          <tr class="hover:bg-white/5 transition">
+            <td class="py-3 px-3 font-mono text-[10px] text-slate-400">${tx.id}</td>
+            <td class="py-3 px-3">
+              <div class="font-bold text-slate-200">${tx.userName || 'مستثمر'}</div>
+              <div class="text-[10px] text-slate-400 font-mono">${tx.userPhone || ''}</div>
+            </td>
+            <td class="py-3 px-3">
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${isDep ? 'bg-emerald-500/15 text-emerald-400' : isWith ? 'bg-amber-500/15 text-amber-400' : 'bg-slate-800 text-slate-300'}">
+                ${isDep ? 'إيداع' : isWith ? 'سحب' : tx.type}
+              </span>
+            </td>
+            <td class="py-3 px-3 font-bold ${isDep ? 'text-emerald-400' : 'text-amber-400'}">$${Math.abs(tx.amount).toFixed(2)}</td>
+            <td class="py-3 px-3">
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${tx.status === 'completed' ? 'bg-emerald-500/15 text-emerald-400' : tx.status === 'pending' ? 'bg-yellow-500/15 text-yellow-300' : 'bg-rose-500/15 text-rose-400'}">
+                ${tx.status === 'completed' ? 'مكتمل' : tx.status === 'pending' ? 'قيد المراجعة' : 'مرفوض'}
+              </span>
+            </td>
+            <td class="py-3 px-3 text-slate-400 text-[11px]">${tx.description || tx.address || tx.txHash || '-'}</td>
+            <td class="py-3 px-3 text-center space-x-1 space-x-reverse">
+              ${tx.status === 'pending' ? `
+                <button onclick="setTxStatus('${tx.id}', '${tx.userId}', 'completed')" class="px-2 py-1 rounded bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 text-[10px] font-bold">موافقة ✓</button>
+                <button onclick="setTxStatus('${tx.id}', '${tx.userId}', 'rejected')" class="px-2 py-1 rounded bg-rose-500/20 text-rose-300 hover:bg-rose-500/30 text-[10px] font-bold">رفض ✕</button>
+              ` : '<span class="text-slate-500 text-[10px]">تمت المعالجة</span>'}
+            </td>
+          </tr>
+        `;
+      });
+    }
+
+    function renderContracts() {
+      const grid = document.getElementById('contracts-grid');
+      grid.innerHTML = '';
+      (appData.contracts || []).forEach(c => {
+        grid.innerHTML += `
+          <div class="glass-card p-5 rounded-3xl space-y-3.5 border border-amber-500/20 flex flex-col justify-between hover:border-amber-500/40 transition">
+            <div class="space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30">${c.badgeKeyAr || c.badgeKey || 'عقد معتمد'}</span>
+                <span class="text-xs font-bold text-cyan-400 bg-cyan-500/10 px-2.5 py-0.5 rounded-full border border-cyan-500/20">⏳ ${c.durationDays} يوم</span>
+              </div>
+              <h4 class="font-extrabold text-slate-100 text-base">${c.titleAr || c.contractName}</h4>
+              <p class="text-[11px] text-slate-400 line-clamp-2 leading-relaxed">${c.description || ''}</p>
+            </div>
+            <div class="space-y-1.5 pt-2.5 border-t border-white/5">
+              <div class="flex justify-between items-center text-xs">
+                <span class="text-slate-400 font-semibold">رصيد التفعيل المطلوب:</span>
+                <span class="font-black text-amber-300 text-sm">$${c.investmentAmount}</span>
+              </div>
+              <div class="flex justify-between items-center text-xs">
+                <span class="text-slate-400 font-semibold">مدة العقد (الأيام):</span>
+                <span class="font-bold text-cyan-300">${c.durationDays} يوم</span>
+              </div>
+              <div class="flex justify-between items-center text-xs">
+                <span class="text-slate-400 font-semibold">الربح اليومي:</span>
+                <span class="font-bold text-emerald-400">+$${c.dailyProfit} / يوم</span>
+              </div>
+            </div>
+            <div class="pt-2 border-t border-white/5 flex gap-2">
+              <button onclick="openContractModal('${c.contractId}')" class="flex-1 py-2 rounded-xl gold-gradient text-slate-950 text-xs font-bold hover:brightness-110 shadow-md shadow-amber-500/10 transition active:scale-95">
+                تعديل الرصيد والأيام ✏️
+              </button>
+              ${c.contractId !== 'free' ? `
+                <button onclick="deleteContract('${c.contractId}', '${c.titleAr || c.contractName}')" class="px-3 py-2 rounded-xl bg-rose-500/20 text-rose-300 hover:bg-rose-500/30 text-xs font-bold transition active:scale-95" title="حذف العقد">
+                  🗑️
+                </button>
+              ` : ''}
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    function openContractModal(contractId) {
+      const modal = document.getElementById('modal-contract');
+      const titleEl = document.getElementById('contract-modal-title');
+      
+      if (contractId) {
+        const c = (appData.contracts || []).find(item => item.contractId === contractId);
+        if (!c) return;
+        titleEl.innerText = `تعديل باقة: ${c.titleAr || c.contractName}`;
+        document.getElementById('contract-form-id').value = c.contractId;
+        document.getElementById('contract-form-title').value = c.titleAr || c.contractName || '';
+        document.getElementById('contract-form-amount').value = c.investmentAmount;
+        document.getElementById('contract-form-days').value = c.durationDays;
+        document.getElementById('contract-form-profit').value = c.dailyProfit;
+        document.getElementById('contract-form-badge').value = c.badgeKeyAr || c.badgeKey || '';
+        document.getElementById('contract-form-desc').value = c.description || '';
+      } else {
+        titleEl.innerText = 'إضافة باقة استثمارية جديدة';
+        document.getElementById('contract-form-id').value = '';
+        document.getElementById('contract-form-title').value = '';
+        document.getElementById('contract-form-amount').value = '100';
+        document.getElementById('contract-form-days').value = '30';
+        document.getElementById('contract-form-profit').value = '5.0';
+        document.getElementById('contract-form-badge').value = 'عقد استثماري معتمد';
+        document.getElementById('contract-form-desc').value = 'عقد استثماري بعوائد يومية مضمونة.';
+      }
+
+      modal.classList.remove('hidden');
+    }
+
+    async function submitContractChange() {
+      const contractId = document.getElementById('contract-form-id').value;
+      const titleAr = document.getElementById('contract-form-title').value.trim();
+      const investmentAmount = document.getElementById('contract-form-amount').value;
+      const durationDays = document.getElementById('contract-form-days').value;
+      const dailyProfit = document.getElementById('contract-form-profit').value;
+      const badgeKeyAr = document.getElementById('contract-form-badge').value.trim();
+      const description = document.getElementById('contract-form-desc').value.trim();
+
+      if (!titleAr) {
+        alert('يرجى إدخال اسم العقد');
+        return;
+      }
+      if (investmentAmount === '' || Number(investmentAmount) < 0) {
+        alert('يرجى إدخال رصيد الاستثمار المطلوب (0 أو أكثر)');
+        return;
+      }
+      if (!durationDays || Number(durationDays) <= 0) {
+        alert('يرجى إدخال عدد أيام العقد (يوم واحد على الأقل)');
+        return;
+      }
+      if (dailyProfit === '' || Number(dailyProfit) < 0) {
+        alert('يرجى إدخال الربح اليومي');
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/admin/contract/update', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contractId: contractId || undefined,
+            titleAr,
+            investmentAmount: Number(investmentAmount),
+            durationDays: Number(durationDays),
+            dailyProfit: Number(dailyProfit),
+            badgeKeyAr: badgeKeyAr || undefined,
+            description
+          })
+        });
+        const data = await res.json();
+        if (data.success) {
+          alert('تم حفظ وتعديل باقة العقد بنجاح!');
+          closeModal('modal-contract');
+          refreshData();
+        } else {
+          alert(data.message || 'فشل التعديل');
+        }
+      } catch (e) {
+        alert('حدث خطأ أثناء حفظ العقد');
+      }
+    }
+
+    async function deleteContract(contractId, title) {
+      if (!confirm(`هل أنت متأكد من حذف باقة "${title}" نهائياً من المنصة؟`)) return;
+      try {
+        const res = await fetch('/api/admin/contract/delete', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contractId })
+        });
+        const data = await res.json();
+        if (data.success) {
+          alert('تم حذف باقة العقد بنجاح!');
+          refreshData();
+        } else {
+          alert(data.message || 'فشل الحذف');
+        }
+      } catch (e) {
+        alert('حدث خطأ أثناء الحذف');
+      }
+    }
+
+    async function toggleUserActivation(userId, currentScore) {
+      const targetScore = currentScore >= 100 ? 0 : 100;
+      const actionName = targetScore === 100 ? 'تفعيل الحساب (100 نقطة شرف)' : 'إلغاء التفعيل (0 نقطة شرف)';
+      if (!confirm(`هل تريد ${actionName} لهذا المستخدم؟`)) return;
+
+      try {
+        const res = await fetch('/api/admin/user/honor-score', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId, honorScore: targetScore })
+        });
+        const data = await res.json();
+        if (data.success) {
+          refreshData();
+        }
+      } catch (e) {
+        alert('حدث خطأ أثناء تغيير حالة التفعيل');
+      }
+    }
+
+    function renderWalletSettings() {
+      const s = appData.settings || {};
+      document.getElementById('cfg-deposit-addr').value = s.depositAddress || '';
+      document.getElementById('cfg-deposit-net').value = s.depositNetwork || 'Polygon (USDT)';
+      document.getElementById('cfg-min-dep').value = s.minDeposit || 3;
+    }
+
+    function openBalanceModal(userId, name, bal) {
+      document.getElementById('balance-user-id').value = userId;
+      document.getElementById('balance-user-label').innerText = `المستثمر: ${name} (الرصيد الحالي: $${(bal || 0).toFixed(2)})`;
+      document.getElementById('balance-amount').value = '';
+      document.getElementById('balance-reason').value = '';
+      document.getElementById('modal-balance').classList.remove('hidden');
+    }
+
+    function openHonorModal(userId, name, score) {
+      document.getElementById('honor-user-id').value = userId;
+      document.getElementById('honor-user-label').innerText = `المستثمر: ${name}`;
+      document.getElementById('honor-score-val').value = score || 100;
+      document.getElementById('honor-box-chances').value = 0;
+      document.getElementById('honor-wheel-spins').value = 0;
+      document.getElementById('modal-honor').classList.remove('hidden');
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.add('hidden');
+    }
+
+    async function submitBalanceChange() {
+      const userId = document.getElementById('balance-user-id').value;
+      const action = document.getElementById('balance-action').value;
+      const amount = document.getElementById('balance-amount').value;
+      const reason = document.getElementById('balance-reason').value;
+
+      if (!amount || Number(amount) <= 0) {
+        alert('يرجى إدخال مبلغ صحيح');
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/admin/user/balance', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId, action, amount, reason })
+        });
+        const data = await res.json();
+        if (data.success) {
+          alert('تم تعديل الرصيد بنجاح!');
+          closeModal('modal-balance');
+          refreshData();
+        } else {
+          alert(data.message || 'فشل التعديل');
+        }
+      } catch (e) {
+        alert('حدث خطأ في الاتصال');
+      }
+    }
+
+    async function submitHonorAndChances() {
+      const userId = document.getElementById('honor-user-id').value;
+      const score = document.getElementById('honor-score-val').value;
+      const box = document.getElementById('honor-box-chances').value;
+      const wheel = document.getElementById('honor-wheel-spins').value;
+
+      try {
+        // Update honor score
+        await fetch('/api/admin/user/honor-score', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId, honorScore: score })
+        });
+
+        // Update chances if > 0
+        if (Number(box) > 0 || Number(wheel) > 0) {
+          await fetch('/api/admin/user/chances', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId, mysteryChances: box, luckySpins: wheel })
+          });
+        }
+
+        alert('تم تحديث البيانات بنجاح!');
+        closeModal('modal-honor');
+        refreshData();
+      } catch (e) {
+        alert('حدث خطأ في التحديث');
+      }
+    }
+
+    async function saveWalletConfig() {
+      const depositAddress = document.getElementById('cfg-deposit-addr').value;
+      const depositNetwork = document.getElementById('cfg-deposit-net').value;
+      const minDeposit = document.getElementById('cfg-min-dep').value;
+      const adminPassword = document.getElementById('cfg-admin-pass').value;
+
+      try {
+        const res = await fetch('/api/admin/wallet-config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ depositAddress, depositNetwork, minDeposit, adminPassword: adminPassword || undefined })
+        });
+        const data = await res.json();
+        if (data.success) {
+          alert('تم حفظ إعدادات المحفظة بنجاح!');
+          refreshData();
+        }
+      } catch (e) {
+        alert('فشل حفظ الإعدادات');
+      }
+    }
+
+    async function sendBroadcast() {
+      const title = document.getElementById('bcast-title').value;
+      const message = document.getElementById('bcast-msg').value;
+      const category = document.getElementById('bcast-cat').value;
+
+      if (!title || !message) {
+        alert('يرجى كتابة العنوان والرسالة');
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/admin/broadcast-notification', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title, message, category })
+        });
+        const data = await res.json();
+        if (data.success) {
+          alert('تم بث الإشعار لجميع المستثمرين بنجاح!');
+          document.getElementById('bcast-title').value = '';
+          document.getElementById('bcast-msg').value = '';
+        }
+      } catch (e) {
+        alert('فشل إرسال الإشعار');
+      }
+    }
+
+    async function setTxStatus(txId, userId, status) {
+      if (!confirm(`هل أنت متأكد من ${status === 'completed' ? 'الموافقة على' : 'رفض'} هذه العملية؟`)) return;
+      try {
+        const res = await fetch('/api/admin/transaction/status', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ txId, userId, status })
+        });
+        const data = await res.json();
+        if (data.success) {
+          refreshData();
+        }
+      } catch (e) {
+        alert('فشل تحديث الحالة');
+      }
+    }
+
+    function adminLogout() {
+      sessionStorage.removeItem('vexa_admin_logged');
+      localStorage.removeItem('vexa_auth_token');
+      window.location.href = '/';
+    }
+  </script>
+</body>
+</html>
